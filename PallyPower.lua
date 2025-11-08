@@ -870,7 +870,7 @@ function PallyPower:SendSelf()
 		if not SkillInfo[i] then
 			s = s.."nn"
 		else
-			s = s .. SkillInfo[i].rank .. SkillInfo[i].talent
+			s = s .. sformat("%x%x", SkillInfo[i].rank, SkillInfo[i].talent)
 		end
 	end
 	s = s .. "@"
@@ -1129,23 +1129,29 @@ function PallyPower:ParseMessage(sender, msg)
 
 	if sfind(msg, "^SELF") then
 		PallyPower_NormalAssignments[sender] = {}
-		PallyPower_Assignments[sender] = { }
+		-- Only reset assignments if we're not the leader or if it's our own SELF message
+		-- This prevents non-leader SELF messages from overwriting leader's assignments
+		if not iAmLeader or sender == self.player then
+			PallyPower_Assignments[sender] = { }
+		end
 		AllPallys[sender] = { }
 
 		self:SyncAdd(sender)
 
-		_, _, numbers, assign = sfind(msg, "SELF ([0-9n]*)@([0-9n]*)")
-		for i = 1, 6 do
+		_, _, numbers, assign = sfind(msg, "SELF ([0-9a-fn]*)@([0-9n]*)")
+		for i = 1, 4 do
 			rank = ssub(numbers, (i - 1) * 2 + 1, (i - 1) * 2 + 1)
 			talent = ssub(numbers, (i - 1) * 2 + 2, (i - 1) * 2 + 2)
 			if rank ~= "n" then
 				AllPallys[sender][i] = { }
-				AllPallys[sender][i].rank = tonumber(rank)
-				AllPallys[sender][i].talent = tonumber(talent)
+				AllPallys[sender][i].rank = tonumber(rank, 16)
+				AllPallys[sender][i].talent = tonumber(talent, 16)
 			end
 		end
 		-- sort here
-		if assign then
+		-- Only process assignments from SELF message if we're not the leader or if it's our own message
+		-- This prevents non-leader paladins from overwriting leader's assignments when they refresh
+		if assign and (not iAmLeader or sender == self.player) then
 			for i = 1, PALLYPOWER_MAXCLASSES do
 				tmp =ssub(assign, i, i)
 				if tmp == "n" or tmp == "" then tmp = 0 end
@@ -1157,32 +1163,67 @@ function PallyPower:ParseMessage(sender, msg)
 
 	if sfind(msg, "^ASSIGN") then
 		_, _, name, class, skill = sfind(msg, "^ASSIGN (.*) (.*) (.*)")
-		if name ~= sender and not (iAmLeader or (AllPallys[name] and AllPallys[name].freeassign)) then return false end
+		-- Permission check: Allow if sender is assigning to themselves OR sender is leader OR target has freeassign
+		local senderIsLeader = self:CheckRaidLeader(sender)
+		local targetHasFreeassign = AllPallys[name] and AllPallys[name].freeassign
+		if name ~= sender and not senderIsLeader and not targetHasFreeassign then
+			return false
+		end
 		if not PallyPower_Assignments[name] then PallyPower_Assignments[name] = {} end
 		class = class + 0
 		skill = skill + 0
 		PallyPower_Assignments[name][class] = skill
+		self:UpdateLayout()
+		-- Force immediate UI update when receiving assignments for this player
+		if name == self.player then
+			self:ButtonsUpdate()
+		end
 	end
 
 	if sfind(msg, "^NASSIGN") then
+		local shouldUpdate = false
+		-- Permission check: Allow if sender is leader OR sender is assigning to themselves
+		local senderIsLeader = self:CheckRaidLeader(sender)
 		for pname, class, tname, skill in string.gmatch(ssub(msg, 9), "([^@]*) ([^@]*) ([^@]*) ([^@]*)") do
-			if pname ~= sender and not (iAmLeader or (AllPallys[pname] and AllPallys[pname].freeassign)) then return end
+			local targetHasFreeassign = AllPallys[pname] and AllPallys[pname].freeassign
+			if pname ~= sender and not senderIsLeader and not targetHasFreeassign then
+				return
+			end
 			if not PallyPower_NormalAssignments[pname] then PallyPower_NormalAssignments[pname] = {} end
 			class = class + 0
 			if not PallyPower_NormalAssignments[pname][class] then PallyPower_NormalAssignments[pname][class] = {} end
 			skill = skill + 0
 			if skill == 0 then skill = nil end
 			PallyPower_NormalAssignments[pname][class][tname] = skill
+			-- Check if this assignment affects the current player
+			if pname == self.player then
+				shouldUpdate = true
+			end
+		end
+		self:UpdateLayout()
+		-- Force immediate UI update if this player's assignments were changed
+		if shouldUpdate then
+			self:ButtonsUpdate()
 		end
 	end
 
 	if sfind(msg, "^MASSIGN") then
 		_, _, name, skill = sfind(msg, "^MASSIGN (.*) (.*)")
-		if name ~= sender and not (iAmLeader or (AllPallys[name] and AllPallys[name].freeassign)) then return false end
+		-- Permission check: Allow if sender is assigning to themselves OR sender is leader OR target has freeassign
+		local senderIsLeader = self:CheckRaidLeader(sender)
+		local targetHasFreeassign = AllPallys[name] and AllPallys[name].freeassign
+		if name ~= sender and not senderIsLeader and not targetHasFreeassign then
+			return false
+		end
 		if not PallyPower_Assignments[name] then PallyPower_Assignments[name] = {} end
 		skill = skill + 0
 		for i = 1, PALLYPOWER_MAXCLASSES do
 			PallyPower_Assignments[name][i] = skill
+		end
+		self:UpdateLayout()
+		-- Force immediate UI update when receiving assignments for this player
+		if name == self.player then
+			self:ButtonsUpdate()
 		end
 	end
 
@@ -1209,7 +1250,11 @@ function PallyPower:ParseMessage(sender, msg)
 	end
 
 	if sfind(msg, "^ASELF") then
-		PallyPower_AuraAssignments[sender] = 0
+		-- Only reset aura assignment if we're not the leader or if it's our own ASELF message
+		-- This prevents non-leader SELF messages from overwriting leader's aura assignments
+		if not iAmLeader or sender == self.player then
+			PallyPower_AuraAssignments[sender] = 0
+		end
 		AllPallys[sender].AuraInfo = { }
 		_, _, numbers, assign = sfind(msg, "ASELF ([0-9a-fn]*)@([0-9n]*)")
 		for i = 1, PALLYPOWER_MAXAURAS do
@@ -1221,7 +1266,9 @@ function PallyPower:ParseMessage(sender, msg)
 				AllPallys[sender].AuraInfo[i].talent = tonumber(talent,16)
 			end
 		end
-		if assign then
+		-- Only process aura assignment from ASELF message if we're not the leader or if it's our own message
+		-- This prevents non-leader paladins from overwriting leader's aura assignments when they refresh
+		if assign and (not iAmLeader or sender == self.player) then
 			if assign == "n" or assign == "" then
 				assign = 0
 			end
@@ -1232,10 +1279,20 @@ function PallyPower:ParseMessage(sender, msg)
 
 	if sfind(msg, "^AASSIGN") then
 		_, _, name, aura = sfind(msg, "^AASSIGN (.*) (.*)")
-		if name ~= sender and not (iAmLeader or (AllPallys[name] and AllPallys[name].freeassign)) then return false end
+		-- Permission check: Allow if sender is assigning to themselves OR sender is leader OR target has freeassign
+		local senderIsLeader = self:CheckRaidLeader(sender)
+		local targetHasFreeassign = AllPallys[name] and AllPallys[name].freeassign
+		if name ~= sender and not senderIsLeader and not targetHasFreeassign then
+			return false
+		end
 		if not PallyPower_AuraAssignments[name] then PallyPower_AuraAssignments[name] = {} end
 		aura = aura + 0
 		PallyPower_AuraAssignments[name] = aura
+		self:UpdateLayout()
+		-- Force immediate UI update when receiving aura assignment for this player
+		if name == self.player then
+			self:ButtonsUpdate()
+		end
 	end
 
 end
