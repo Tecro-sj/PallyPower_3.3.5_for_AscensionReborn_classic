@@ -1,5 +1,57 @@
-r145 r144 | tecro | 2025-10-17 | Custom Build
 ------------------------------------------------------------------------
+  r146 | Tecro | 2025-11-08 | Custom Build
+  ------------------------------------------------------------------------
+
+  Fixed critical buff synchronization and assignment bugs:
+
+  Bug Fix 1: Buff synchronization - Hexadecimal encoding
+  - Fixed buff rank/talent transmission between paladins
+  - Changed encoding from decimal to hexadecimal format (consistent with aura encoding)
+  - Fixed receiving loop to parse 4 buffs instead of 6
+  - Prevents data corruption when rank/talent values exceed single digit
+  - This fixes the issue where assistants couldn't see other paladins' skilled buffs (only saw default Wisdom/Might/Kings)
+  - Location: PallyPower.lua:873, 1137-1144
+
+  Bug Fix 2: Missing UI updates for assignments
+  - Added UpdateLayout() calls to assignment message handlers (ASSIGN, NASSIGN, MASSIGN, AASSIGN)
+  - Fixed issue where leader-assigned buffs were received but UI didn't update
+  - Location: PallyPower.lua:1171, 1184, 1195, 1254
+
+  Bug Fix 3: Refresh overwrites leader assignments
+  - Leaders now ignore assignment data from other paladins' SELF messages
+  - Prevents non-leader refresh from overwriting leader's assignments
+  - Location: PallyPower.lua:1134-1160, 1223-1244
+
+  Bug Fix 4: Delayed UI updates for button contents
+  - Added ButtonsUpdate() calls to assignment handlers when assignment affects local player
+  - UI now updates instantly (< 0.1s) instead of waiting up to 2 seconds
+  - Location: PallyPower.lua:1172-1175, 1179-1197, 1208-1212, 1271-1275
+
+  Bug Fix 5: Critical permission check logic error
+  - Corrected permission checks to verify if SENDER is leader instead of receiver
+  - Assignment messages from leaders were being blocked because receivers checked their own leader status
+  - This completely broke assignment synchronization from leader to other paladins
+  - Location: PallyPower.lua:1173-1193, 1195-1223, 1225-1246, 1298-1317
+
+  Bug Fix 6: Incorrect leader detection method
+  - Use CheckRaidLeader(sender) function instead of non-existent AllPallys[sender].leader flag
+  - CheckRaidLeader() uses WoW API (GetRaidRosterInfo) to get current rank dynamically
+  - Recognizes both Raid Leader (rank 2) and Raid Assistant (rank 1)
+  - Location: Same as Bug Fix 5 (all four assignment handlers)
+
+  Impact:
+  - Buff capabilities (rank/talent) now sync correctly between paladins
+  - Leaders and Assistants can successfully assign buffs to other paladins
+  - Assignments appear instantly in receiving paladin's UI
+  - Refresh no longer overwrites leader's assignments
+  - Both Raid Leader and Raid Assistant are properly recognized
+
+  Total changes: 1 file changed, 70 insertions(+), 13 deletions(-)
+  File: PallyPower.lua
+  
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+r145 r144 | tecro | 2025-10-17 | Custom Build
 Changed layout selection "Standard" too default.
 ------------------------------------------------------------------------
 r144 | tecro | 2025-10-15 | Custom Build
