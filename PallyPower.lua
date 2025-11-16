@@ -27,6 +27,8 @@ PallyPower_SavedPresets = {}
 AllPallys = {}
 SyncList = {}
 ChatControl = {}
+PallyVersions = {}
+NewerVersionAvailable = false
 
 local initalized = false
 PP_Symbols = 0
@@ -97,6 +99,8 @@ function PallyPower:OnEnable()
 	self:ScheduleRepeatingTimer(self.InventoryScan, 60, self)
 	self:UpdateRoster()
 	self:BindKeys()
+	self:CheckVersionOnLogin()
+	self:ScheduleTimer("BroadcastVersion", 3)
 end
 
 function PallyPower:BindKeys()
@@ -963,6 +967,47 @@ function PallyPower:SendMessage(msg)
 	SendAddonMessage(PallyPower.commPrefix, msg, type, self.player)
 end
 
+function PallyPower:BroadcastVersion()
+	if self:GetNumUnits() > 0 then
+		self:SendMessage("VERSION " .. PallyPower.version)
+	end
+end
+
+function PallyPower:CompareVersions(v1, v2)
+	local v1major, v1minor, v1patch = string.match(v1, "v(%d+)%.(%d+)%.(%d+)")
+	local v2major, v2minor, v2patch = string.match(v2, "v(%d+)%.(%d+)%.(%d+)")
+
+	if not v1major or not v2major then return 0 end
+
+	v1major, v1minor, v1patch = tonumber(v1major), tonumber(v1minor), tonumber(v1patch)
+	v2major, v2minor, v2patch = tonumber(v2major), tonumber(v2minor), tonumber(v2patch)
+
+	if v2major > v1major then return 1
+	elseif v2major < v1major then return -1
+	elseif v2minor > v1minor then return 1
+	elseif v2minor < v1minor then return -1
+	elseif v2patch > v1patch then return 1
+	elseif v2patch < v1patch then return -1
+	else return 0 end
+end
+
+function PallyPower:CheckVersionOnLogin()
+	if not self.opt.lastSeenVersion or self.opt.lastSeenVersion ~= PallyPower.version then
+		self:Print("|cff00ff00PallyPower updated to " .. PallyPower.version .. "!|r")
+		self:Print("|cffFFFF00New: Sanctified Blessings support (ALT-, hotkey)|r")
+		self.opt.lastSeenVersion = PallyPower.version
+	end
+end
+
+function PallyPower:NotifyNewVersion(sender, version)
+	if not NewerVersionAvailable then
+		NewerVersionAvailable = true
+		self:Print("|cffFF0000New PallyPower version available!|r")
+		self:Print("|cffFFFF00" .. sender .. " is using version " .. version .. " (you have " .. PallyPower.version .. ")|r")
+		self:Print("|cff00FF00Download: " .. PallyPower.versionCheckURL .. "|r")
+	end
+end
+
 function PallyPower:SPELLS_CHANGED()
 	self:ScanSpells()
 	self:SendSelf()
@@ -1131,6 +1176,19 @@ function PallyPower:ParseMessage(sender, msg)
 	local iAmLeader = self:CheckRaidLeader(self.player)
 	if msg == "REQ" then
 		self:SendSelf()
+		self:BroadcastVersion()
+	end
+
+	if sfind(msg, "^VERSION") then
+		_, _, version = sfind(msg, "^VERSION (.*)")
+		if version then
+			PallyVersions[sender] = version
+			local comparison = self:CompareVersions(PallyPower.version, version)
+			if comparison > 0 then
+				self:NotifyNewVersion(sender, version)
+			end
+		end
+		return
 	end
 
 	if sfind(msg, "^SELF") then

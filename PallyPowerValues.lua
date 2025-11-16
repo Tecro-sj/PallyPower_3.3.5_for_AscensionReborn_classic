@@ -4,6 +4,8 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("PallyPower")
 
 PallyPower.commPrefix = "PLPWR";
+PallyPower.version = "v3.2.21r";
+PallyPower.versionCheckURL = "https://github.com/Tecro-sj/PallyPower_3.3.5_for_AscensionReborn_classic";
 
 PALLYPOWER_MAXCLASSES = 11;
 PALLYPOWER_MAXPERCLASS = 8;

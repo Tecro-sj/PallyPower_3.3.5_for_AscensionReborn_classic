@@ -1,0 +1,81 @@
+PallyPower Version Broadcasting System - Implementation Summary
+================================================================
+
+Version: v3.2.21r
+Date: 2025-11-16
+
+IMPLEMENTED FEATURES:
+====================
+
+1. VERSION BROADCASTING
+   - Automatically broadcasts version when joining party/raid
+   - Responds to REQ messages with version info
+   - 3-second delay on login before broadcasting
+
+2. VERSION COMPARISON
+   - Compares semantic versions (v3.2.20 vs v3.2.21r)
+   - Automatically detects newer versions in party/raid
+   - One-time notification per session
+
+3. LOGIN NOTIFICATION
+   - Shows update message on first login after version change
+   - Displays new features (Sanctified Blessings)
+   - Persists last seen version in SavedVariables
+
+4. NEW VERSION ALERT
+   - Red alert when newer version detected
+   - Shows which player has newer version
+   - Provides GitHub download link
+   - Only shows once per session to avoid spam
+
+TECHNICAL DETAILS:
+==================
+
+Files Modified:
+- PallyPowerValues.lua: Added version constant and GitHub URL
+- PallyPower.lua: Added version system functions
+- PallyPower.toc: Updated version to v3.2.21r
+
+New Functions:
+- BroadcastVersion(): Sends version to party/raid
+- CompareVersions(): Compares two version strings
+- CheckVersionOnLogin(): Shows update notification
+- NotifyNewVersion(): Alerts user of newer version
+
+New Variables:
+- PallyPower.version = "v3.2.21r"
+- PallyPower.versionCheckURL = GitHub link
+- PallyVersions = {} (stores other players' versions)
+- NewerVersionAvailable = false (prevents spam)
+
+Message Protocol:
+- "VERSION v3.2.21r" - sent via CHAT_MSG_ADDON
+- Parsed in ParseMessage() function
+- Auto-responds to REQ with version broadcast
+
+HOW IT WORKS:
+=============
+
+On Login:
+1. Check if version changed since last login
+2. Show update notification if changed
+3. Wait 3 seconds, then broadcast version
+
+When Joining Party/Raid:
+1. Send version to all members
+2. Receive versions from others
+3. Compare versions and notify if outdated
+
+When REQ Message Received:
+1. Send character data (existing behavior)
+2. Also broadcast version (new behavior)
+
+User Experience:
+- Green text: Update notification on login
+- Red text: Alert when newer version available
+- Yellow text: Details and download link
+- Only shown once per session
+
+DOWNLOAD LINK:
+==============
+https://github.com/Tecro-sj/PallyPower_3.3.5_for_AscensionReborn_classic
