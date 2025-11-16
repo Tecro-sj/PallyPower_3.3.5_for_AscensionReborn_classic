@@ -1,4 +1,4 @@
-## For last changes / fixes check out the Changelog-PallyPower file
+## For last changes / fixes check out the ``Changelog-PallyPower.txt`` file
 
 ## Install Help
 
