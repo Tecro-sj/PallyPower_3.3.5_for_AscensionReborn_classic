@@ -1,4 +1,55 @@
 ------------------------------------------------------------------------
+r147 | Tecro | 2025-11-16 | Custom Build
+------------------------------------------------------------------------
+
+Added Sanctified Blessings support with auto-buffing functionality
+
+Feature: Sanctified Blessings Integration
+- Added support for all four Sanctified Blessings (30-minute duration)
+  * Sanctified Blessing of Wisdom (Spell ID: 1325894)
+  * Sanctified Blessing of Might (Spell ID: 1325782)
+  * Sanctified Blessing of Kings (Spell ID: 1325898)
+  * Sanctified Blessing of Sanctuary (Spell ID: 1325899)
+- Location: PallyPowerValues.lua
+
+Feature: Enhanced Buff Detection System
+- Extended IsBuffActive() to detect all three blessing variants: Normal, Greater, and Sanctified
+- Updated GetBuffExpiration() to recognize Sanctified blessings as 30-minute buffs (same as Greater)
+- Modified ScanClass() to include Sanctified blessings in buff verification
+- Location: PallyPower.lua
+
+Feature: Three-Tier Auto-Buff System
+- Hotkey1 (Default: ,) - Casts Normal Blessings (10-minute duration)
+- Hotkey2 (Default: CTRL-,) - Casts Greater Blessings (30-minute duration)
+- Hotkey3 (Default: ALT-,) - Casts Sanctified Blessings (30-minute duration)
+- Auto-button intelligently selects blessing tier based on active hotkey
+- Location: PallyPower.lua
+
+Feature: Raid-Wide Sanctified Buffing
+- In Greater Blessing mode (all classes receive same buff), Hotkey3 now casts Sanctified Blessings
+- Automatically targets player with lowest buff duration
+- Applies raid-wide Sanctified blessing to entire group
+- Location: PallyPower.lua
+
+Feature: UI and Configuration
+- Added Hotkey3 keybinding field to options panel
+- Implemented English and German localization for new features
+- Location: PallyPowerOptions.lua, locale files
+
+Impact:
+- Paladins can now use Sanctified Blessings through PallyPower's auto-buff system
+- Three-tier hotkey system provides quick access to all blessing variants
+- Raid buffing efficiency improved with automatic target selection
+- Full integration with existing buff detection and expiration tracking
+
+Total changes: 3 files changed, [estimated 80+] insertions(+)
+Files: PallyPower.lua, PallyPowerValues.lua, PallyPowerOptions.lua, locale files
+
+------------------------------------------------------------------------
+
+  
+  
+  ------------------------------------------------------------------------
   r146 | Tecro | 2025-11-08 | Custom Build
   ------------------------------------------------------------------------
 
