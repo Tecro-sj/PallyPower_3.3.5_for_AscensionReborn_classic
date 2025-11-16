@@ -46,9 +46,6 @@ Total changes: 3 files changed, [estimated 80+] insertions(+)
 Files: PallyPower.lua, PallyPowerValues.lua, PallyPowerOptions.lua, locale files
 
 ------------------------------------------------------------------------
-
-  
-  
   ------------------------------------------------------------------------
   r146 | Tecro | 2025-11-08 | Custom Build
   ------------------------------------------------------------------------
