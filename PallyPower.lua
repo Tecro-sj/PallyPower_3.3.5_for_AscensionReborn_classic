@@ -107,7 +107,10 @@ function PallyPower:BindKeys()
 	if not self.opt.autobuff.autokey2 then
 		self.opt.autobuff.autokey2 = false
 	end
-	if not self.opt.autobuff.autokey1 or not self.opt.autobuff.autokey2 then
+	if not self.opt.autobuff.autokey3 then
+		self.opt.autobuff.autokey3 = false
+	end
+	if not self.opt.autobuff.autokey1 or not self.opt.autobuff.autokey2 or not self.opt.autobuff.autokey3 then
 		self:UnbindKeys()
 	end
 	if self.opt.autobuff.autokey1 then
@@ -115,6 +118,9 @@ function PallyPower:BindKeys()
 	end
 	if self.opt.autobuff.autokey2 then
 		SetOverrideBindingClick(self.autoButton, false, self.opt.autobuff.autokey2, "PallyPowerAuto", "Hotkey2")
+	end
+	if self.opt.autobuff.autokey3 then
+		SetOverrideBindingClick(self.autoButton, false, self.opt.autobuff.autokey3, "PallyPowerAuto", "Hotkey3")
 	end
 end
 
@@ -1469,9 +1475,10 @@ function PallyPower:ScanClass(classID)
 			local spell = PallyPower.Spells[spellID]
 			local spell2 = PallyPower.GSpells[spellID]
 			local gspell = PallyPower.GSpells[gspellID]
+			local sanctifiedSpell = PallyPower.SanctifiedSpells[spellID]
 			unit.visible = IsSpellInRange(spell, unit.unitid) == 1
 			unit.dead = UnitIsDeadOrGhost(unit.unitid)
-			unit.hasbuff = self:IsBuffActive(spell, spell2, unit.unitid)
+			unit.hasbuff = self:IsBuffActive(spell, spell2, sanctifiedSpell, unit.unitid)
 			unit.specialbuff = spellID ~= gspellID
 		end
 	end
@@ -2218,10 +2225,11 @@ function PallyPower:GetBuffExpiration(classID)
 			local spellID, gspellID = self:GetSpellID(classID, unit.name)
 			local spell = PallyPower.Spells[spellID]
 			local gspell = PallyPower.GSpells[gspellID]
+			local sanctifiedSpell = PallyPower.SanctifiedSpells[spellID]
 			local buffName, _, _, _, _, buffDuration, buffExpire = UnitBuff(unit.unitid, j)
 			while buffExpire do
 				buffExpire = buffExpire - GetTime()
-				if (buffName == gspell) then
+				if (buffName == gspell) or (buffName == sanctifiedSpell) then
 					classExpire = min(classExpire, buffExpire)
 					classDuration = min(classDuration, buffDuration)
 					break
@@ -2559,7 +2567,8 @@ function PallyPower:GetUnitAndSpellSmart(classID, mousebutton)
 		 	spell = PallyPower.Spells[spellID]
 			spell2 = PallyPower.GSpells[spellID]
 			gspell = PallyPower.GSpells[gspellID]
-			local buffExpire, buffDuration = self:IsBuffActive(spell, spell2, unit.unitid)
+			local sanctifiedSpell = PallyPower.SanctifiedSpells[spellID]
+			local buffExpire, buffDuration = self:IsBuffActive(spell, spell2, sanctifiedSpell, unit.unitid)
 			if (not buffExpire or buffExpire/buffDuration < 0.5) and IsSpellInRange(spell, unit.unitid) == 1 then
 				return unit.unitid, spell, gspell
 			end
@@ -2568,14 +2577,14 @@ function PallyPower:GetUnitAndSpellSmart(classID, mousebutton)
 	return nil, "", ""
 end
 
-function PallyPower:IsBuffActive(spellName, gspellName, unitID)
+function PallyPower:IsBuffActive(spellName, gspellName, sanctifiedSpellName, unitID)
 	local j = 1
 	while UnitBuff(unitID, j) do
 		local buffName, _, _, _, _, buffDuration, buffExpire = UnitBuff(unitID, j)
-		if (buffName == spellName) or (buffName == gspellName) then
+		if (buffName == spellName) or (buffName == gspellName) or (buffName == sanctifiedSpellName) then
 			if buffExpire then
 				buffExpire = buffExpire - GetTime()
-			end		
+			end
 			return buffExpire, buffDuration, buffName
 		end
 		j = j + 1
@@ -2678,7 +2687,8 @@ end
 function PallyPower:AutoBuff(mousebutton)
 	if InCombatLockdown() then return end
 	local now = time()
-	local greater = (mousebutton == "LeftButton" or mousebutton == "Hotkey2")
+	local greater = (mousebutton == "LeftButton" or mousebutton == "Hotkey2" or mousebutton == "Hotkey3")
+	local sanctified = (mousebutton == "Hotkey3")
 	if greater then
 		local groupCount = {}
 		local HLspell = PallyPower.HLSpell
@@ -2699,6 +2709,7 @@ function PallyPower:AutoBuff(mousebutton)
 					local spell = PallyPower.Spells[spellid]
 					local spell2 = PallyPower.GSpells[spellid]
 					local gspell = PallyPower.GSpells[gspellid]
+					local sanctifiedSpell = PallyPower.SanctifiedSpells[spellid]
 					--self:Print(unit.name .. ": " .. groupCount[select(3, GetRaidRosterInfo(select(3, unit.unitid:find("(%d+)"))))])
 					if (spellid == gspellid and unit.unitid) then
 						if (IsSpellInRange(spell, unit.unitid) == 1) then
@@ -2716,12 +2727,12 @@ function PallyPower:AutoBuff(mousebutton)
 								classMinUnit = unit
 								classMinUnitPenalty = penalty
 							end
-							local buffExpire = self:IsBuffActive(spell, spell2, unit.unitid)
+							local buffExpire = self:IsBuffActive(spell, spell2, sanctifiedSpell, unit.unitid)
 							if ((not buffExpire or buffExpire < classMinExpire and buffExpire < PALLYPOWER_GREATERBLESSINGDURATION-5*60) and classMinExpire > 0) then
 								--self:Print(unit.name .. " has new min expire (" .. (buffExpire or 0) .. ")")
 								classMinExpire = (buffExpire or 0)
 								classMinSpell = spell
-								classMaxSpell = gspell
+								classMaxSpell = sanctifiedSpell
 							end
 						elseif ((IsSpellInRange(HLspell, unit.unitid) ~= 1) and (not UnitIsAFK(unit.unitid)) and (GetNumRaidMembers() == 0 or groupCount[select(3, GetRaidRosterInfo(select(3, unit.unitid:find("(%d+)"))))] > 3)) then
 							classNeedsBuff = false
@@ -2751,6 +2762,7 @@ function PallyPower:AutoBuff(mousebutton)
 			local spell = PallyPower.Spells[spellID]
 			local spell2 = PallyPower.GSpells[spellID]
 			local gspell = PallyPower.GSpells[gspellID]
+			local sanctifiedSpell = PallyPower.SanctifiedSpells[spellID]
 			if (IsSpellInRange(spell, unit.unitid) == 1) then
 				local penalty = 0
 				if (self.AutoBuffedList[unit.name] and now - self.AutoBuffedList[unit.name] < 20) then
@@ -2760,7 +2772,7 @@ function PallyPower:AutoBuff(mousebutton)
 					penalty = penalty + PALLYPOWER_NORMALBLESSINGDURATION
 				end
 				--self:Print("penalty on " .. unit.name .. ": " .. penalty)
-				local buffExpire, _, buffName = self:IsBuffActive(spell, spell2, unit.unitid)
+				local buffExpire, _, buffName = self:IsBuffActive(spell, spell2, sanctifiedSpell, unit.unitid)
 				if ((not buffExpire or buffExpire + penalty < minExpire and buffExpire < PALLYPOWER_NORMALBLESSINGDURATION) and minExpire > 0 ) then
 					--self:Print("buff needed " .. unit.name)
 					minExpire = (buffExpire or 0) + penalty

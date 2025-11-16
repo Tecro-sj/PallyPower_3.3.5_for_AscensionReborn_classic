@@ -15,6 +15,8 @@ if L then
 	L["AUTOKEY1_DESC"] = "Taste, die zum automatischen Buffen von kleinen Segen gedrückt werden muss."
 	L["AUTOKEY2"] = "Auto-Buff-Taste (große Segen)"
 	L["AUTOKEY2_DESC"] = "Taste, die zum automatischen Buffen von großen Segen gedrückt werden muss."
+	L["AUTOKEY3"] = "Auto-Buff-Taste (geheiligter Segen)"
+	L["AUTOKEY3_DESC"] = "Taste, die zum automatischen Buffen von geheiligten Segen gedrückt werden muss."
 	L["BAS"] = "Segenzuteilung"
 	L["BAS_DESC"] = "Die Segenzuteilung öffnen."
 	L["BRPT"] = "Segenzuteilung verkünden"

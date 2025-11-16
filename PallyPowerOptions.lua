@@ -300,6 +300,18 @@ PallyPower.options = {
 								  end,
 							get = function() return PallyPower.opt.autobuff.autokey2 end
 						},
+					autokey3 = {
+						name = L["AUTOKEY3"],
+						desc = L["AUTOKEY3_DESC"],
+						type = "text",
+						validate = "keybinding",
+						set = function(value)
+								PallyPower:UnbindKeys()
+								PallyPower.opt.autobuff.autokey3 = value
+								PallyPower:BindKeys()
+							  end,
+						get = function() return PallyPower.opt.autobuff.autokey3 end
+					},
 						autobutton = {
 							name = L["AUTOBTN"],
 							type = "toggle",

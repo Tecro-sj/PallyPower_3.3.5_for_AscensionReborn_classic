@@ -15,6 +15,8 @@ if L then
 	L["AUTOKEY1_DESC"] = "Key Binding for automated buffing of normal blessings."
 	L["AUTOKEY2"] = "Auto Greater Blessing Key"
 	L["AUTOKEY2_DESC"] = "Key Binding for automated buffing of greater blessings."
+	L["AUTOKEY3"] = "Auto Sanctified Blessing Key"
+	L["AUTOKEY3_DESC"] = "Key Binding for automated buffing of sanctified blessings."
 	L["BAS"] = "Blessing Assignments"
 	L["BAS_DESC"] = "Open Blessing Assignments"
 	L["BRPT"] = "Blessings Report"

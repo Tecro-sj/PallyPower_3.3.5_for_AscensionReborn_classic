@@ -26,6 +26,7 @@ PALLYPOWER_DEFAULT_VALUES = {
 		autobuff = {
 			autokey1 = ",",
 			autokey2 = "CTRL-,",
+			autokey3 = "ALT-,",
 			autobutton = true,
 			waitforpeople = false,
 		},
@@ -183,6 +184,14 @@ PallyPower.GSpells = {
 	[2] = GetSpellInfo(1125782), --BS["Greater Blessing of Might"],
 	[3] = GetSpellInfo(1125898), --BS["Greater Blessing of Kings"],
 	[4] = GetSpellInfo(1125899), --BS["Greater Blessing of Sanctuary"],
+};
+
+PallyPower.SanctifiedSpells = {
+	[0] = "",
+	[1] = GetSpellInfo(1325894), --BS["Sanctified Blessing of Wisdom"],
+	[2] = GetSpellInfo(1325782), --BS["Sanctified Blessing of Might"],
+	[3] = GetSpellInfo(1325898), --BS["Sanctified Blessing of Kings"],
+	[4] = GetSpellInfo(1325899), --BS["Sanctified Blessing of Sanctuary"],
 };
 
 PallyPower.RFSpell = GetSpellInfo(1125780) --BS["Righteous Fury"]
