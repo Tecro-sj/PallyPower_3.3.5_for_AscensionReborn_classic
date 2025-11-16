@@ -19,7 +19,7 @@ Feature: Enhanced Buff Detection System
 - Location: PallyPower.lua
 
 Feature: Three-Tier Auto-Buff System
-- Hotkey1 (Default: ,) - Casts Normal Blessings (10-minute duration)
+- Hotkey1 (Default: ,) - Casts Normal Blessings (30-minute duration)
 - Hotkey2 (Default: CTRL-,) - Casts Greater Blessings (30-minute duration)
 - Hotkey3 (Default: ALT-,) - Casts Sanctified Blessings (30-minute duration)
 - Auto-button intelligently selects blessing tier based on active hotkey
